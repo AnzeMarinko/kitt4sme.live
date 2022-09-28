@@ -15,7 +15,7 @@ data:
   # you also change the Istio ingress ro
   # Overrides the default of
   # - https://kitt4sme.collab-cloud.eu/argocd
-  argocd.webapp: http://10.59.26.159/argocd
+  argocd.webapp: http://10.59.26.200/argocd
 
   # OIDC config. You only need this if you've configured Argo CD to do
   # SSO with Keycloak. The only thing you should change in the block
@@ -25,7 +25,7 @@ data:
   # Don't modify anything else unless you know what you're doing :-)
   argocd.sso: |
     name: Keycloak
-    issuer: http://10.59.26.159/auth/realms/master
+    issuer: http://10.59.26.200/auth/realms/master
     clientID: argocd
     clientSecret: $oidc.keycloak.clientSecret
     requestedScopes: ["openid", "profile", "email", "groups"]
