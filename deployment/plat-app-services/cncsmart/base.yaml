@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cncsmart
+  name: cncsmart
+spec:
+  ports:
+  - name: http
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: cncsmart
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cncsmart
+  name: cncsmart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cncsmart
+  template:
+    metadata:
+      labels:
+        app: cncsmart
+    spec:
+      containers:
+        - image: "ghcr.io/AnzeMarinko/kitt4sme.cncsmart:latest"
+          imagePullPolicy: IfNotPresent
+          name: cncsmart
+          ports:
+          - containerPort: 8000
+            name: http
+          env:
+          - name: "ORION_BASE_URL"
+            value: "http://orion:1026"
