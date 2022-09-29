@@ -23,7 +23,7 @@ same specs will do. If you have Multipass, you can spin up a 20.4
 Ubuntu VM
 
 ```bash
-$ multipass launch --name kitt4sme --cpus 2 --mem 4G --disk 40G 20.04
+$ multipass launch --name kitt4sme --cpus 4 --mem 8G --disk 40G 20.04
 $ multipass shell kitt4sme
 ```
 
@@ -55,6 +55,14 @@ to enter suitable values for the following fields:
 * `argocd.sso`: OIDC config for SSO through Keycloak. Like the above
   setting, you'll only need this if you want to do SSO. Here too, the
   only thing to change is the hostname/IP address to match yours.
+
+Change TODOs (locally) in:
+[custom-urls.yaml](https://github.com/AnzeMarinko/kitt4sme.live/blob/main/deployment/mesh-infra/_replacements_/custom-urls.yaml)
+[app.yaml](https://github.com/AnzeMarinko/kitt4sme.live/blob/main/deployment/mesh-infra/argocd/projects/base/app.yaml)
+
+* repoURL should be changed to the new forked repo
+* URL parts should be changed to that of the VM IP
+* You get Multipass VM IP by: `multipass list`
 
 Then edit
 
@@ -104,14 +112,23 @@ cluster — e.g. `istioctl 1.11.4`. Let's create a convenience script
 to start a Nix shell with our flake:
 
 ```bash
-$ echo 'nix shell github:c0c0n3/kitt4sme.live?dir=nix' > ~/tools.sh
-$ chmod +x ~/tools.sh
+$ git clone https://github.com/AnzeMarinko/kitt4sme.live
+$ cd kitt4sme.live/nix
+$ nix shell
 ```
 
 Notice our tools will only be available inside the Nix shell and will
 be gone on exiting the shell. In particular, they won't override any
 existing tool installation on this box. No dependency hell. But still
 inside the Nix shell, you'll get the right version of each tool.
+
+Download right version of the kubeseal:
+
+```bash
+$ wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.17.5/kubeseal-0.17.5-linux-amd64.tar.gz
+$ tar -xf kubeseal-0.17.5-linux-amd64.tar.gz
+$ sudo install -m 755 kubeseal /usr/local/bin/kubeseal
+```
 
 
 ### Cluster orchestration
@@ -187,7 +204,7 @@ Now if you drop into the Nix shell, you should be able to access the
 cluster with plain `kubectl`. As a smoke test, try
 
 ```bash
-$ ~/tools.sh
+$ nix shell
 $ kubectl version
 $ kubectl get all --all-namespaces
 ```
@@ -205,7 +222,7 @@ the architecture document :-)
 Deploy Istio to the cluster using our own profile
 
 ```bash
-$ wget -q -O profile.yaml https://raw.githubusercontent.com/c0c0n3/kitt4sme.live/main/deployment/mesh-infra/istio/profile.yaml
+$ wget -q -O profile.yaml https://raw.githubusercontent.com/AnzeMarinko/kitt4sme.live/main/deployment/mesh-infra/istio/profile.yaml
 $ istioctl install -y --verify -f profile.yaml
 ```
 
@@ -241,9 +258,7 @@ the GitHub repo URL with that of your fork** if you're building your
 own Kitt4sme cluster)
 
 ```bash
-$ kustomize build \
-    https://github.com/c0c0n3/kitt4sme.live/deployment/mesh-infra/argocd | \
-    kubectl apply -f -
+$ kustomize build https://github.com/AnzeMarinko/kitt4sme.live/deployment/mesh-infra/argocd | kubectl apply -f -
 ```
 
 After deploying itself to the cluster, Argo CD will populate it with
@@ -262,15 +277,20 @@ Go for coffee.
 
 Run some smoke tests to make sure all the K8s resources got created,
 all the services are up and running and there's no errors. The only
-unhappy service should be Keycloak
+unhappy service should be Keycloak.
 
-```console
+Run:
+
+```bash
 $ kubectl get pod --all-namespaces
-NAMESPACE  NAME                     READY   STATUS                     RESTARTS AGE
-...
-default  keycloak-645f7df959-4xc4x    1/2   CreateContainerConfigError   0      33s
-...
 ```
+
+All the services should be in the “running” stage after some 15-30min, except:
+
+* profilers
+* postgres
+* quantumleap
+* keycloak
 
 The reason for that is we create the initial admin user through a
 sealed secret which the Sealed Secrets controller can't unpack. In
@@ -284,8 +304,7 @@ Notice Argo CD automatically generates an admin password on the first
 deployment. To show it, run
 
 ```bash
-kubectl -n argocd get secret argocd-initial-admin-secret \
-        -o jsonpath="{.data.password}" | base64 -d && echo
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 ```
 
 You can use it if you get in trouble during the bootstrap procedure,
@@ -316,7 +335,57 @@ Now give yourself a pat on the shoulder. You've got a shiny, brand
 new, fully functional KITT4SME cloud to...manage and maintain.
 Godspeed!
 
+Those services fail because they depend on some credentials that are passed as secrets.
+We need to generate secrets for postgres and keycloak.
 
+Generating secrets works like this:
+
+You write plain text passwords in the templates, then run `kubeseal` on top of them, which generates the same
+templates, but those passwords are now encrypted. Kubeseal connects to the cluster, takes its public key, and uses
+it to encrypt the data. You then push those encrypted templates to the repo - GitOps (not the plain text ones!!!). ArgoCD recognizes
+that there was a change in the repo. The `sealed-secret` service notices that new sealed secrets are available and
+decrypts them and updates the kubernetes cluster with plain secrets that kubernetes knows how to handle. Each
+service has then a “reloader” that notices that the plain secret changed and the new value needs to be used.
+
+ArgoCD runs an update every couple of minutes. Not to wait for that, you can log in to ArgoCD and manually execute sync.
+
+Generate secrets:
+
+* `cd deployment/mesh-infra/security/secrets/`
+
+change the password in the template:
+
+* `nano templates/keycloak-builtin-admin.yaml`
+
+then run:
+
+* `kubeseal -o yaml < templates/keycloak-builtin-admin.yaml > keycloak-builtin-admin.yaml`
+
+Repeat the same process for the postgres:
+
+* `nano templates/postgres-users.yaml`
+* `kubeseal -o yaml < templates/postgres-users.yaml > postgres-users.yaml`
+
+Then:
+
+* git restore the template files
+* git add new encrypted files
+* git push to repo
+
+You can then either wait for the ArgoCD to pick up the changes and propagate them,
+or manually trigger ArgoCD, by logging in to the ArgoCD and clicking on the
+“sync apps” in the top left corner.
+The status of all the services should be “running” after ~15min.
+
+## Starting already deployed platform
+
+```bash
+multipass shell kitt4sme
+cd kitt4sme.live/nix
+nix shell
+microk8s start
+kubectl get pod --all-namespaces
+```
 
 
 [arch.cloud]: https://github.com/c0c0n3/kitt4sme/blob/master/arch/mesh/cloud.md
