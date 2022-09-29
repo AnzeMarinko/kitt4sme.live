@@ -40,7 +40,7 @@ to build your own Kitt4sme instance on your own box.
 
 The first step is to fork `kitt4sme.live` on GitHub so you can use
 your fork as a GitOps source for building your cluster. Then in your
-fork edit
+fork edit (via ssh, to enable pushing changes)
 
 * `deployment/mesh-infra/_replacements_/custom-urls.yaml`
 
