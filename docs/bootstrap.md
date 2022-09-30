@@ -307,6 +307,14 @@ deployment. To show it, run
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 ```
 
+ArgoCD should be working now:
+
+* Go to VM_IP/argocd using web browser
+* You should see the login page.
+* You can actually login:
+* username: admin
+* password: see the code above -> copy paste the output
+
 You can use it if you get in trouble during the bootstrap procedure,
 but keeping it around is like an accident waiting to happen. So you
 should definitely zap it as soon as you've managed to log into Argo
