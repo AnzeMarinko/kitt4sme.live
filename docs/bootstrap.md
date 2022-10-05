@@ -40,7 +40,7 @@ to build your own Kitt4sme instance on your own box.
 
 The first step is to fork `kitt4sme.live` on GitHub so you can use
 your fork as a GitOps source for building your cluster. Then in your
-fork edit
+fork edit (via ssh, to enable pushing changes)
 
 * `deployment/mesh-infra/_replacements_/custom-urls.yaml`
 
@@ -306,6 +306,14 @@ deployment. To show it, run
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 ```
+
+ArgoCD should be working now:
+
+* Go to VM_IP/argocd using web browser
+* You should see the login page.
+* You can actually login:
+* username: admin
+* password: see the code above -> copy paste the output
 
 You can use it if you get in trouble during the bootstrap procedure,
 but keeping it around is like an accident waiting to happen. So you

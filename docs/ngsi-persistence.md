@@ -52,20 +52,20 @@ containing heart rate and temperature readings of a factory worker
 wearing it.
 
 ```console
-curl -v kitt4sme.collab-cloud.eu/orion/v2/entities?options=upsert \
+curl -v 0.0.0.0:1026/orion/v2/entities?options=upsert \
      -H 'Content-Type: application/json' \
-     -H 'fiware-service: zekis_manufacturing' \
+     -H 'fiware-service: csic' \
      -d '
 {
-  "id": "urn:ngsi-ld:zekis:wearable:004",
-  "type": "Biometrics",
-  "heartRate": {
-    "type": "Integer",
-    "value": 78
+  "id": "urn:ngsi-ld:PartProgram:1",
+  "type": "PartProgram",
+  "file_name": {
+    "type": "Text",
+    "value": "sample.json"
   },
-  "temperature": {
-    "type": "Number",
-    "value": 36.1
+  "json_data": {
+    "type": "Text",
+    "value": "[{\"sample\": 1}]"
   }
 }
 '
