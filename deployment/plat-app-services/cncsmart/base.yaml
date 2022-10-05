@@ -32,7 +32,7 @@ spec:
         app: cncsmart
     spec:
       containers:
-        - image: "ghcr.io/AnzeMarinko/kitt4sme.cncsmart:latest"
+        - image: "anzemarinko/kitt4sme.cncsmart:latest"
           imagePullPolicy: IfNotPresent
           name: cncsmart
           ports:
