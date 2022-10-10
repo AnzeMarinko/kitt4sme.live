@@ -376,8 +376,8 @@ Repeat the same process for the postgres:
 
 Then:
 
-* git restore the template files
-* git add new encrypted files
+* `git restore templates/*.yaml`
+* git add new encrypted files and commit changes
 * git push to repo
 
 You can then either wait for the ArgoCD to pick up the changes and propagate them,
