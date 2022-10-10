@@ -95,6 +95,26 @@ spec:
         host: viqe.default.svc.cluster.local
         port:
           number: 8000
+  - match:
+    - uri:
+        prefix: /dummy/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: dummy.default.svc.cluster.local
+        port:
+          number: 8000
+  - match:
+    - uri:
+        prefix: /cncsmart/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: cncsmart.default.svc.cluster.local
+        port:
+          number: 8000
 
 # NOTE
 # 1. URL rewriting. We use overlapping prefixes to make sure `/x`, `/x/`
