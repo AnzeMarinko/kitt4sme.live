@@ -7,9 +7,9 @@ metadata:
 spec:
   ports:
   - name: http
-    port: 8000
+    port: 8011
     protocol: TCP
-    targetPort: 8000
+    targetPort: 8011
   selector:
     app: dummy
 
@@ -36,7 +36,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: dummy
           ports:
-          - containerPort: 8000
+          - containerPort: 8011
             name: http
           env:
           - name: "ORION_BASE_URL"

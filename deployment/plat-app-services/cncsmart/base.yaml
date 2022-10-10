@@ -7,9 +7,9 @@ metadata:
 spec:
   ports:
   - name: http
-    port: 8000
+    port: 8022
     protocol: TCP
-    targetPort: 8000
+    targetPort: 8022
   selector:
     app: cncsmart
 
@@ -36,7 +36,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: cncsmart
           ports:
-          - containerPort: 8000
+          - containerPort: 8022
             name: http
           env:
           - name: "ORION_BASE_URL"
