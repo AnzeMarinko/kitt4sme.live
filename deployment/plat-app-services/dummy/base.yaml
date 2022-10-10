@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: dummy
+  name: dummy
+spec:
+  ports:
+  - name: http
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: dummy
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dummy
+  name: dummy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dummy
+  template:
+    metadata:
+      labels:
+        app: dummy
+    spec:
+      containers:
+        - image: "anzemarinko/kitt4sme.dummy:latest"
+          imagePullPolicy: IfNotPresent
+          name: dummy
+          ports:
+          - containerPort: 8000
+            name: http
+          env:
+          - name: "ORION_BASE_URL"
+            value: "http://orion:1026"
